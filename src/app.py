@@ -5,11 +5,13 @@ A super simple FastAPI application that allows students to view and sign up
 for extracurricular activities at Mergington High School.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import os
 from pathlib import Path
+import json
+from pydantic import BaseModel
 
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
@@ -18,6 +20,32 @@ app = FastAPI(title="Mergington High School API",
 current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
+
+
+class AdminCredentials(BaseModel):
+    username: str
+    password: str
+
+
+def load_teacher_credentials() -> dict:
+    teachers_path = current_dir / "teachers.json"
+    if not teachers_path.exists():
+        return {}
+    with teachers_path.open("r", encoding="utf-8") as file:
+        payload = json.load(file)
+    teachers = payload.get("teachers", [])
+    return {teacher["username"]: teacher["password"] for teacher in teachers}
+
+
+teacher_credentials = load_teacher_credentials()
+
+
+def require_admin(admin_user: str | None, admin_password: str | None) -> None:
+    if not admin_user or not admin_password:
+        raise HTTPException(status_code=401, detail="Admin credentials required")
+    stored_password = teacher_credentials.get(admin_user)
+    if stored_password is None or stored_password != admin_password:
+        raise HTTPException(status_code=401, detail="Invalid admin credentials")
 
 # In-memory activity database
 activities = {
@@ -88,9 +116,23 @@ def get_activities():
     return activities
 
 
+@app.post("/admin/login")
+def admin_login(credentials: AdminCredentials):
+    stored_password = teacher_credentials.get(credentials.username)
+    if stored_password is None or stored_password != credentials.password:
+        raise HTTPException(status_code=401, detail="Invalid admin credentials")
+    return {"message": "Admin login successful"}
+
+
 @app.post("/activities/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str):
+def signup_for_activity(
+    activity_name: str,
+    email: str,
+    admin_user: str | None = Header(default=None, alias="X-Admin-User"),
+    admin_password: str | None = Header(default=None, alias="X-Admin-Password"),
+):
     """Sign up a student for an activity"""
+    require_admin(admin_user, admin_password)
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -111,8 +153,14 @@ def signup_for_activity(activity_name: str, email: str):
 
 
 @app.delete("/activities/{activity_name}/unregister")
-def unregister_from_activity(activity_name: str, email: str):
+def unregister_from_activity(
+    activity_name: str,
+    email: str,
+    admin_user: str | None = Header(default=None, alias="X-Admin-User"),
+    admin_password: str | None = Header(default=None, alias="X-Admin-Password"),
+):
     """Unregister a student from an activity"""
+    require_admin(admin_user, admin_password)
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")

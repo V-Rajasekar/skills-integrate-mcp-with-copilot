@@ -8,8 +8,22 @@
   </head>
   <body>
     <header>
-      <h1>Mergington High School</h1>
-      <h2>Extracurricular Activities</h2>
+      <div class="header-content">
+        <div>
+          <h1>Mergington High School</h1>
+          <h2>Extracurricular Activities</h2>
+        </div>
+        <div class="user-menu">
+          <button id="user-menu-toggle" class="user-icon" aria-haspopup="true" aria-expanded="false" type="button">
+            User
+          </button>
+          <div id="user-menu-panel" class="user-menu-panel hidden" role="menu">
+            <p id="admin-status" class="admin-status">Guest</p>
+            <button id="login-button" type="button">Log in</button>
+            <button id="logout-button" type="button" class="hidden">Log out</button>
+          </div>
+        </div>
+      </div>
     </header>
 
     <main>
@@ -22,7 +36,8 @@
       </section>
 
       <section id="signup-container">
-        <h3>Sign Up for an Activity</h3>
+        <h3>Register a Student</h3>
+        <p id="admin-hint" class="info hidden">Admin login required to register or remove students.</p>
         <form id="signup-form">
           <div class="form-group">
             <label for="email">Student Email:</label>
@@ -35,11 +50,32 @@
               <!-- Activity options will be loaded here -->
             </select>
           </div>
-          <button type="submit">Sign Up</button>
+          <button type="submit">Register Student</button>
         </form>
         <div id="message" class="hidden"></div>
       </section>
     </main>
+
+    <div id="login-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="login-title">
+      <div class="modal-content">
+        <h3 id="login-title">Admin Login</h3>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="admin-username">Username</label>
+            <input type="text" id="admin-username" required />
+          </div>
+          <div class="form-group">
+            <label for="admin-password">Password</label>
+            <input type="password" id="admin-password" required />
+          </div>
+          <div class="modal-actions">
+            <button type="submit">Log in</button>
+            <button type="button" id="login-cancel">Cancel</button>
+          </div>
+          <p id="login-message" class="message hidden"></p>
+        </form>
+      </div>
+    </div>
 
     <footer>
       <p>&copy; 2023 Mergington High School</p>
