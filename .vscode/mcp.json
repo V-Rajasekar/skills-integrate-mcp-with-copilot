@@ -1,0 +1,10 @@
+{
+    "servers": {
+        "github": {
+            "type": "http",
+            "url": "https://api.githubcopilot.com/mcp/",
+            "timeout": 30000,
+            "retries": 3
+        }
+    }
+}
